@@ -1,0 +1,27 @@
+# CMake build output
+/build/
+/CMakeFiles/
+/CMakeCache.txt
+/cmake_install.cmake
+/Makefile
+/shaders/compiled_shaders/*
+
+# Visual Studio files
+*.sln
+*.vcxproj*
+*.vcxproj.filters
+CppProperties.json
+CMakeSettings.json
+
+# OS-generated
+.DS_Store
+Thumbs.db
+
+# User editor settings
+.vs/
+.vscode/
+.idea/
+*.swp
+
+
+notes/
