@@ -9,6 +9,21 @@ find_package(Vulkan REQUIRED)
 set(SLANGC_EXECUTABLE $ENV{VULKAN_SDK}//bin/slangc)
 set(SHADER_SLANG_SOURCES ${CMAKE_CURRENT_LIST_DIR}/shaders/shader.slang)
 
+# ImGui source files
+set(IMGUI_SRC
+    third_party/imgui/imgui.cpp
+    third_party/imgui/imgui_draw.cpp
+    third_party/imgui/imgui_tables.cpp
+    third_party/imgui/imgui_widgets.cpp
+    third_party/imgui/imgui_demo.cpp # Optional, for showing demo UI
+)
+
+# Optional: if you're using the Vulkan + GLFW bindings
+set(IMGUI_BACKENDS
+    third_party/imgui/backends/imgui_impl_vulkan.cpp
+    third_party/imgui/backends/imgui_impl_glfw.cpp
+)
+
 function(add_slang_shader_target TARGET)
     cmake_parse_arguments(SHADER "" "" "SOURCES" ${ARGN})
     set(SHADERS_DIR ${CMAKE_CURRENT_LIST_DIR}/shaders/compiled_shaders/)
@@ -32,7 +47,16 @@ add_subdirectory(third_party/glfw)
 add_subdirectory(third_party/glm)
 
 add_executable(${PROJECT_NAME}
-  src/main.cpp
+src/main.cpp
+)
+
+target_sources(${PROJECT_NAME}
+    PRIVATE ${IMGUI_SRC} ${IMGUI_BACKENDS}
+)
+
+target_include_directories(${PROJECT_NAME}
+    PRIVATE third_party/imgui
+    PRIVATE third_party/imgui/backends
 )
 
 add_slang_shader_target(shader_spv SOURCES ${SHADER_SLANG_SOURCES})
