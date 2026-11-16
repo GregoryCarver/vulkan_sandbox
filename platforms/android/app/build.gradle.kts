@@ -76,6 +76,8 @@ tasks.configureEach {
 }
 
 dependencies {
+    // Align transitive Kotlin modules to avoid duplicate classes from older stdlib-jdk8.
+    implementation(platform("org.jetbrains.kotlin:kotlin-bom:1.8.22"))
     implementation("androidx.appcompat:appcompat:1.7.1")
     implementation("androidx.games:games-activity:3.0.5")
 }
