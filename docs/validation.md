@@ -25,6 +25,12 @@ Vulkan 1.4.351. The application requests Vulkan 1.3.
 | Synchronization validation: 240-frame scaled and 240-frame legacy smoke runs | Both passed; zero errors including teardown |
 | Interactive visual check | Textured cubes, depth, camera and ImGui rendered; clean close, zero logged errors |
 | SPIR-V validation for Vulkan 1.3 | Passed |
+| Clean local checkout of implementation commit `21e7689` | Debug and Release built; 2/2 CPU tests passed in each; generated SPIR-V validated |
+
+The clean checkout at `out/clean-checkout` cloned the committed source and its exact
+submodule revisions from existing local repositories. It used new build directories
+and no previous generated assets. This verifies source/dependency completeness;
+it does not test downloading dependencies from GitHub on a new machine.
 
 The smoke sequence resizes through 960x540, 1024x768 and 1280x800, minimizes and
 restores the window, continuously replaces mesh buffers, and checks shutdown.
