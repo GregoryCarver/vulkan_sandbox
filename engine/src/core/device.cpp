@@ -9,6 +9,9 @@
 #include <vector>
 #ifdef __ANDROID__
 #include <android/log.h>
+#if __ANDROID_MIN_SDK_VERSION__ < 33
+#error "Direct Vulkan 1.3 linkage requires Android API 33 or newer."
+#endif
 #endif
 
 namespace sandbox {

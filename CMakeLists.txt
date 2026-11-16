@@ -15,9 +15,6 @@ if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/third_party/vma/include/vk_mem_alloc.
 endif()
 if(ANDROID)
     # Vulkan comes from the NDK target, never the host Windows Vulkan SDK.
-    if(CMAKE_SYSTEM_VERSION LESS 33)
-        message(FATAL_ERROR "Direct Vulkan 1.3 linkage requires Android API 33 or newer.")
-    endif()
     find_library(SANDBOX_ANDROID_VULKAN vulkan REQUIRED)
     add_library(Vulkan::Vulkan UNKNOWN IMPORTED GLOBAL)
     set_target_properties(Vulkan::Vulkan PROPERTIES IMPORTED_LOCATION "${SANDBOX_ANDROID_VULKAN}")
