@@ -3,7 +3,7 @@ set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 add_subdirectory("${PROJECT_SOURCE_DIR}/third_party/glfw" "${PROJECT_BINARY_DIR}/third_party/glfw" EXCLUDE_FROM_ALL)
-add_executable(sandbox_windows main.cpp windows_platform.cpp)
+add_executable(sandbox_windows main.cpp windows_application.cpp windows_platform.cpp)
 target_link_libraries(sandbox_windows PRIVATE sandbox::viewer glfw)
 set_target_properties(sandbox_windows PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}"
