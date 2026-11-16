@@ -1,0 +1,25 @@
+{
+  "version": 5,
+  "cmakeMinimumRequired": { "major": 3, "minor": 24, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "windows", "displayName": "Windows / Visual Studio 2022",
+      "generator": "Visual Studio 17 2022", "architecture": "x64",
+      "binaryDir": "${sourceDir}/out/windows",
+      "cacheVariables": { "SANDBOX_ENABLE_IMGUI": "ON", "SANDBOX_BUILD_TESTS": "ON" }
+    },
+    {
+      "name": "windows-no-ui", "inherits": "windows",
+      "binaryDir": "${sourceDir}/out/windows-no-ui",
+      "cacheVariables": { "SANDBOX_ENABLE_IMGUI": "OFF" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "windows-debug", "configurePreset": "windows", "configuration": "Debug" },
+    { "name": "windows-release", "configurePreset": "windows", "configuration": "Release" },
+    { "name": "windows-no-ui", "configurePreset": "windows-no-ui", "configuration": "Release" }
+  ],
+  "testPresets": [
+    { "name": "windows-debug", "configurePreset": "windows", "configuration": "Debug", "output": { "outputOnFailure": true } }
+  ]
+}

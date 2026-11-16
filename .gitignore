@@ -1,5 +1,12 @@
 # CMake build output
 /build/
+/out/
+/.tools/
+**/.gradle/
+**/.cxx/
+**/build/
+local.properties
+CMakeUserPresets.json
 /CMakeFiles/
 /CMakeCache.txt
 /cmake_install.cmake

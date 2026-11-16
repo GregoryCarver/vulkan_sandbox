@@ -1,0 +1,10 @@
+add_executable(sandbox_selection_tests selection_tests.cpp)
+target_link_libraries(sandbox_selection_tests PRIVATE sandbox::core)
+add_test(NAME selection COMMAND sandbox_selection_tests)
+if(TARGET sandbox_imgui)
+    add_executable(sandbox_imgui_input_tests imgui_input_tests.cpp)
+    target_include_directories(sandbox_imgui_input_tests PRIVATE
+        "${PROJECT_SOURCE_DIR}/samples/viewer/include" "${PROJECT_SOURCE_DIR}/samples/viewer/src")
+    target_link_libraries(sandbox_imgui_input_tests PRIVATE sandbox_imgui)
+    add_test(NAME imgui_input COMMAND sandbox_imgui_input_tests)
+endif()
