@@ -254,9 +254,9 @@ struct Viewer::Impl {
         if (present_fence) present.pNext = &fence_info;
         const auto result = vkQueuePresentKHR(device.present_queue(), &present);
         swapchain.presented(image_index, result);
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || acquire == VK_SUBOPTIMAL_KHR)
-            resize_pending = true;
-        else check_vk(result, "Present frame");
+        const bool present_needs_resize = result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR;
+        if (!present_needs_resize) check_vk(result, "Present frame");
+        resize_pending = present_needs_resize || acquire == VK_SUBOPTIMAL_KHR;
         current_frame = (current_frame + 1) % frame_count;
         return true;
     }
