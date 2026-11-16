@@ -64,9 +64,10 @@ toolchain download was canceled. The wrapper JAR also remains to be generated.
 The Galaxy S24 is the selected first device, but no physical-device result is
 claimed. Follow the [Android setup and device checklist](android.md).
 
-The GitHub Actions workflow builds Windows configurations and an Android debug
-APK. It is added locally and has not run on GitHub. Hosted build success would
-still leave physical GPU/lifecycle checks outstanding.
+The [GitHub Actions workflow](https://github.com/GregoryCarver/vulkan_sandbox/actions/workflows/build.yml)
+records hosted results for each commit. It builds the Windows configurations and
+checks that the Android debug APK contains the native library and compiled shader.
+Physical GPU and lifecycle checks require a device run.
 
 ## Limits of the evidence
 

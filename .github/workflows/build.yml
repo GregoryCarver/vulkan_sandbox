@@ -122,7 +122,14 @@ jobs:
       - name: Build Android arm64 APK
         if: matrix.platform == 'Android'
         working-directory: platforms/android
-        run: gradle --no-daemon --stacktrace :app:assembleDebug
+        run: |
+          gradle --no-daemon --stacktrace :app:assembleDebug
+          if ($LASTEXITCODE) { throw 'Android APK assembly failed' }
+          $apkEntries = jar tf app/build/outputs/apk/debug/app-debug.apk
+          if ($LASTEXITCODE) { throw 'Cannot read the Android APK' }
+          foreach ($entry in @('lib/arm64-v8a/libsandbox_android.so', 'assets/shaders/cube.spv')) {
+            if ($entry -cnotin $apkEntries) { throw "Android APK is missing $entry" }
+          }
 
       - name: Upload Windows package
         if: matrix.platform == 'Windows'

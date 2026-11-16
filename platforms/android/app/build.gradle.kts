@@ -76,5 +76,6 @@ tasks.configureEach {
 }
 
 dependencies {
+    implementation("androidx.appcompat:appcompat:1.7.1")
     implementation("androidx.games:games-activity:3.0.5")
 }
