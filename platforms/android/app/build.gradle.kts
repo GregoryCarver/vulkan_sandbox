@@ -1,3 +1,5 @@
+import java.io.File
+
 plugins {
     id("com.android.application")
 }
@@ -6,7 +8,7 @@ val repositoryRoot = rootProject.projectDir.resolve("../..").canonicalFile
 val slangCompiler = providers.gradleProperty("slangc").orElse(provider {
     val sdk = System.getenv("VULKAN_SDK")
     val windows = System.getProperty("os.name").startsWith("Windows")
-    if (sdk != null) java.io.File(sdk, if (windows) "Bin/slangc.exe" else "bin/slangc").path
+    if (sdk != null) File(sdk, if (windows) "Bin/slangc.exe" else "bin/slangc").path
     else if (windows) "slangc.exe" else "slangc"
 })
 
