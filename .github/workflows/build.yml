@@ -1,0 +1,151 @@
+name: Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.platform }}
+    runs-on: windows-2022
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [Windows, Android]
+    env:
+      VULKAN_SDK_VERSION: 1.4.313.2
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      # Both builds use the host Slang compiler; Android links the NDK Vulkan
+      # loader and headers instead of the Windows SDK libraries.
+      - name: Cache host Vulkan SDK
+        id: vulkan-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/VulkanSDK/${{ env.VULKAN_SDK_VERSION }}
+          key: vulkan-sdk-windows-x64-${{ env.VULKAN_SDK_VERSION }}-copy-only-v1
+
+      - name: Install host Vulkan SDK
+        if: steps.vulkan-cache.outputs.cache-hit != 'true'
+        run: |
+          $installer = Join-Path $env:RUNNER_TEMP 'vulkan-sdk-installer.exe'
+          $sdkRoot = Join-Path $env:RUNNER_TEMP "VulkanSDK/$env:VULKAN_SDK_VERSION"
+          $url = "https://sdk.lunarg.com/sdk/download/$env:VULKAN_SDK_VERSION/windows/vulkansdk-windows-X64-$env:VULKAN_SDK_VERSION.exe"
+          Invoke-WebRequest -Uri $url -OutFile $installer
+          # Published by LunarG: https://vulkan.lunarg.com/sdk/home/
+          $expected = '34a921d951858274ca8e470e9d0a3b7624db41216b3908ccea9f73c8a1b7500e'
+          if ((Get-FileHash -LiteralPath $installer -Algorithm SHA256).Hash -ne $expected) {
+            throw 'Vulkan SDK installer checksum mismatch'
+          }
+          $install = Start-Process -FilePath $installer -WindowStyle Hidden -Wait -PassThru -ArgumentList @(
+            '--root', $sdkRoot, '--accept-licenses', '--default-answer', '--confirm-command', 'install', 'copy_only=1'
+          )
+          if ($install.ExitCode -ne 0) { throw "Vulkan SDK installation failed: $($install.ExitCode)" }
+
+      - name: Configure host tools
+        run: |
+          $sdkRoot = Join-Path $env:RUNNER_TEMP "VulkanSDK/$env:VULKAN_SDK_VERSION"
+          if (!(Test-Path "$sdkRoot/Bin/slangc.exe")) { throw 'SDK is missing slangc.exe' }
+          "VULKAN_SDK=$sdkRoot" >> $env:GITHUB_ENV
+          "$sdkRoot/Bin" >> $env:GITHUB_PATH
+
+      - name: Build Windows Debug and Release
+        if: matrix.platform == 'Windows'
+        run: |
+          cmake --preset windows
+          if ($LASTEXITCODE) { throw 'Windows configuration failed' }
+          cmake --build --preset windows-debug --parallel 4
+          if ($LASTEXITCODE) { throw 'Windows Debug build failed' }
+          ctest --preset windows-debug
+          if ($LASTEXITCODE) { throw 'Windows Debug tests failed' }
+          cmake --build --preset windows-release --parallel 4
+          if ($LASTEXITCODE) { throw 'Windows Release build failed' }
+          ctest --test-dir out/windows -C Release --output-on-failure
+          if ($LASTEXITCODE) { throw 'Windows Release tests failed' }
+          cmake --install out/windows --config Release --prefix out/package
+          if ($LASTEXITCODE) { throw 'Windows packaging failed' }
+
+      - name: Build Windows without ImGui
+        if: matrix.platform == 'Windows'
+        run: |
+          cmake --preset windows-no-ui
+          if ($LASTEXITCODE) { throw 'Windows without ImGui configuration failed' }
+          cmake --build --preset windows-no-ui --parallel 4
+          if ($LASTEXITCODE) { throw 'Windows without ImGui build failed' }
+          ctest --test-dir out/windows-no-ui -C Release --output-on-failure
+          if ($LASTEXITCODE) { throw 'Windows without ImGui tests failed' }
+
+      - name: Build reusable core without the sample
+        if: matrix.platform == 'Windows'
+        run: |
+          cmake -S . -B out/core-only -G 'Visual Studio 17 2022' -A x64 -DSANDBOX_BUILD_SAMPLES=OFF -DSANDBOX_BUILD_TESTS=ON
+          if ($LASTEXITCODE) { throw 'Core configuration failed' }
+          cmake --build out/core-only --config Release --parallel 4
+          if ($LASTEXITCODE) { throw 'Core build failed' }
+          ctest --test-dir out/core-only -C Release --output-on-failure
+          if ($LASTEXITCODE) { throw 'Core tests failed' }
+
+      - name: Set up JDK 17
+        if: matrix.platform == 'Android'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        if: matrix.platform == 'Android'
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools platforms;android-35 build-tools;35.0.0 ndk;28.0.13004108 cmake;3.31.6'
+
+      - name: Set up Gradle
+        if: matrix.platform == 'Android'
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Build Android arm64 APK
+        if: matrix.platform == 'Android'
+        working-directory: platforms/android
+        run: |
+          gradle --no-daemon --stacktrace :app:assembleDebug
+          if ($LASTEXITCODE) { throw 'Android APK assembly failed' }
+          $apkEntries = jar tf app/build/outputs/apk/debug/app-debug.apk
+          if ($LASTEXITCODE) { throw 'Cannot read the Android APK' }
+          foreach ($entry in @('lib/arm64-v8a/libsandbox_android.so', 'assets/shaders/cube.spv')) {
+            if ($entry -cnotin $apkEntries) { throw "Android APK is missing $entry" }
+          }
+
+      - name: Upload Windows package
+        if: matrix.platform == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64-release
+          path: out/package/
+          if-no-files-found: error
+
+      - name: Upload Android APK
+        if: matrix.platform == 'Android'
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-arm64-debug
+          path: platforms/android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      # Hosted runners verify compilation and CPU tests. Run the GPU smoke test
+      # on a Vulkan-capable PC and the lifecycle checklist on a physical phone.
